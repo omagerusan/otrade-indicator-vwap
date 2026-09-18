@@ -1,0 +1,48 @@
+//@version=6
+indicator("P0-B Weekly VWAP 1m", overlay = true)
+
+// Weekly VWAP auf fester 1-Minuten-Basis, Ausgabe als Snapshot auf dem Chart-TF.
+// Historienbeginn und unvollstaendige erste Woche sichtbar machen.
+
+const string TZ = "UTC"
+const int DAY_MS = 86400000
+
+f_utcDayStart(int ts) =>
+    timestamp(TZ, year(ts, TZ), month(ts, TZ), dayofmonth(ts, TZ), 0, 0)
+
+f_utcWeekStart(int ts) =>
+    int dayStart = f_utcDayStart(ts)
+    int daysSinceMonday = (dayofweek(ts, TZ) - dayofweek.monday + 7) % 7
+    dayStart - daysSinceMonday * DAY_MS
+
+f_engine() =>
+    var int srcFirst = na
+    var int weekAnchor = na
+    var float pv = 0.0
+    var float vol = 0.0
+    var int prevWeek = na
+    if na(srcFirst)
+        srcFirst := time
+    int weekKey = f_utcWeekStart(time)
+    bool newWeek = na(prevWeek) or weekKey != prevWeek
+    if newWeek
+        weekAnchor := weekKey
+        pv := 0.0
+        vol := 0.0
+    float p = hlc3
+    float v = volume
+    bool volOk = not na(v) and v > 0
+    bool priceOk = not na(p)
+    if volOk and priceOk
+        pv += p * v
+        vol += v
+    prevWeek := weekKey
+    float vwap = vol > 0 ? pv / vol : na
+    bool complete = srcFirst <= weekAnchor
+    [vwap, weekAnchor, srcFirst, complete]
+
+int reqBars = 100000
+[weekly, weekAnchor, srcFirst, complete] = request.security(syminfo.tickerid, "1", f_engine(), barmerge.gaps_off, barmerge.lookahead_off, calc_bars_count = reqBars)
+
+plot(complete ? weekly : na, "Weekly VWAP 1m", color = color.green, linewidth = 2, style = plot.style_linebr)
+plot(not complete ? weekly : na, "Weekly unvollstaendig", color = color.gray, linewidth = 1, style = plot.style_linebr)

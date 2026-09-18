@@ -1,0 +1,30 @@
+//@version=6
+indicator("P0-D Seed-Bruecke", overlay = false)
+
+// Numerische Referenz aus der Spezifikation, unabhaengig vom Chartfeed.
+// P=[100,110,90] V=[10,30,20] => VWAP=101.666...
+// Seed nach zwei Kerzen: PV=4300 V=40, dritter Beitrag 1800 / 20.
+
+float seedPv = input.float(4300.0, "seedPV")
+float seedV = input.float(40.0, "seedV")
+float p3 = input.float(90.0, "P3")
+float v3 = input.float(20.0, "V3")
+
+float fullPv = 100.0 * 10.0 + 110.0 * 30.0 + 90.0 * 20.0
+float fullV = 60.0
+float fullVwap = fullPv / fullV
+float seededVwap = (seedPv + p3 * v3) / (seedV + v3)
+float absErr = math.abs(fullVwap - seededVwap)
+bool pass = absErr <= math.max(1e-8, math.abs(fullVwap) * 1e-10)
+
+plot(fullVwap, "Vollstaendig", color = color.green)
+plot(seededVwap, "Mit Seed", color = color.blue)
+plot(pass ? 1.0 : 0.0, "Seed-Test Pass", color = color.white)
+
+var table t = na
+if barstate.islast
+    if na(t)
+        t := table.new(position.top_right, 1, 3)
+    table.cell(t, 0, 0, "Voll " + str.tostring(fullVwap, "#.##########"))
+    table.cell(t, 0, 1, "Seed " + str.tostring(seededVwap, "#.##########"))
+    table.cell(t, 0, 2, pass ? "PASS T28" : "FAIL")

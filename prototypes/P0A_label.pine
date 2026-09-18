@@ -1,0 +1,16 @@
+//@version=6
+indicator("P0-A Label-Prototyp", overlay = true, max_labels_count = 5)
+
+// Isoliert: ein Plot und ein transparentes Endlabel am letzten Punkt.
+// Zoomverhalten nur in TradingView pruefen (nativer label.style_label_left-Abstand).
+
+float vwapProxy = ta.sma(hlc3, 10)
+plot(vwapProxy, "Referenzlinie", color = color.yellow, linewidth = 2)
+
+var label endLabel = na
+if barstate.islast
+    if na(endLabel)
+        endLabel := label.new(bar_index, vwapProxy, "", xloc.bar_index, yloc.price, color.new(color.white, 100), label.style_label_left, color.yellow, size.small, text.align_left)
+    label.set_xy(endLabel, bar_index, vwapProxy)
+    label.set_text(endLabel, "Label-Test " + str.format_time(time, "dd.MM.yyyy", "UTC"))
+    label.set_textcolor(endLabel, color.yellow)

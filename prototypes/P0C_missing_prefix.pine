@@ -1,0 +1,41 @@
+//@version=6
+indicator("P0-C Missing Prefix", overlay = true)
+
+// Manueller Anker: innerhalb der Quellhistorie Wert, davor MISSING_PREFIX (kein scheinbarer VWAP).
+
+int manualAnchor = input.time(timestamp("UTC", 2020, 1, 1, 0, 0), "Manueller Anker UTC")
+
+f_engine(int anchorTs) =>
+    var int srcFirst = na
+    var float pv = 0.0
+    var float vol = 0.0
+    var float pvBefore = na
+    var float volBefore = na
+    var float cumPv = 0.0
+    var float cumV = 0.0
+    if na(srcFirst)
+        srcFirst := time
+    float p = hlc3
+    float v = volume
+    bool contrib = not na(v) and v > 0 and not na(p)
+    bool inRange = time >= anchorTs
+    if inRange and na(pvBefore)
+        pvBefore := cumPv
+        volBefore := cumV
+    if contrib
+        cumPv += p * v
+        cumV += v
+    bool missing = anchorTs < srcFirst
+    float vwap = missing ? na : (not na(volBefore) and cumV - volBefore > 0 ? (cumPv - pvBefore) / (cumV - volBefore) : na)
+    [vwap, srcFirst, missing]
+
+[val, srcFirst, missing] = request.security(syminfo.tickerid, "1", f_engine(manualAnchor), barmerge.gaps_off, barmerge.lookahead_off, calc_bars_count = 100000)
+
+plot(missing ? na : val, "VWAP ab Anker", color = color.white, linewidth = 2, style = plot.style_linebr)
+
+var table t = na
+if barstate.islast
+    if na(t)
+        t := table.new(position.top_right, 1, 1)
+    string msg = missing ? "MISSING_PREFIX: Anker vor 1m-Historie (" + str.format_time(srcFirst, "dd.MM.yyyy HH:mm", "UTC") + ")" : "Anker in Quellhistorie"
+    table.cell(t, 0, 0, msg, text_color = color.white, bgcolor = color.new(color.red, missing ? 60 : 100))

@@ -1,0 +1,40 @@
+//@version=6
+indicator("P0-F Style und Swing-Pfad", overlay = true, max_polylines_count = 8, max_labels_count = 8)
+
+// Fuenf Style-Plots plus zwei Swing-Pfade ohne sechsten Plot-Eintrag.
+
+color cDaily = input.color(color.new(#FFEB3B, 0), "Daily", inline = "d", group = "VWAP")
+color cWeekly = input.color(color.new(#4CAF50, 0), "Weekly", inline = "w", group = "VWAP")
+color cMonthly = input.color(color.new(#2962FF, 0), "Monthly", inline = "m", group = "VWAP")
+color cAth = input.color(color.new(#FFFFFF, 0), "ATH", inline = "a", group = "VWAP")
+color cAtl = input.color(color.new(#FFFFFF, 0), "ATL", inline = "b", group = "VWAP")
+color cSwing = input.color(color.new(#673AB7, 0), "Swing", inline = "s", group = "VWAP")
+int swingWidth = input.int(2, "Width", minval = 1, maxval = 4, inline = "s", group = "VWAP")
+
+plot(close, "Daily VWAP", color = cDaily, linewidth = 2, style = plot.style_linebr)
+plot(close * 1.001, "Weekly VWAP", color = cWeekly, linewidth = 2, style = plot.style_linebr, linestyle = plot.linestyle_dashed)
+plot(close * 0.999, "Monthly VWAP", color = cMonthly, linewidth = 2, style = plot.style_linebr, linestyle = plot.linestyle_dashed)
+plot(ta.highest(high, 50), "ATH VWAP", color = cAth, linewidth = 2, style = plot.style_linebr, linestyle = plot.linestyle_dashed)
+plot(ta.lowest(low, 50), "ATL VWAP", color = cAtl, linewidth = 2, style = plot.style_linebr, linestyle = plot.linestyle_dashed)
+
+var polyline polyHigh = na
+var polyline polyLow = na
+var array<chart.point> ptsHigh = array.new<chart.point>()
+var array<chart.point> ptsLow = array.new<chart.point>()
+var int lastKey = na
+
+if barstate.islastconfirmedhistory or barstate.islast
+    if na(lastKey) or lastKey != time
+        array.push(ptsHigh, chart.point.from_time(time, high))
+        array.push(ptsLow, chart.point.from_time(time, low))
+        lastKey := time
+        if array.size(ptsHigh) > 200
+            array.shift(ptsHigh)
+            array.shift(ptsLow)
+    if not na(polyHigh)
+        polyline.delete(polyHigh)
+    if not na(polyLow)
+        polyline.delete(polyLow)
+    if array.size(ptsHigh) >= 2
+        polyHigh := polyline.new(ptsHigh, false, false, xloc.bar_time, cSwing, na, line.style_solid, swingWidth)
+        polyLow := polyline.new(ptsLow, false, false, xloc.bar_time, cSwing, na, line.style_solid, swingWidth)

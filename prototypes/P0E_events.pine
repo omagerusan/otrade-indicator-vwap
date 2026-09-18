@@ -1,0 +1,56 @@
+//@version=6
+indicator("P0-E Ereignisse", overlay = true, max_labels_count = 10)
+
+// Bestaetigter 1H-Pivot ohne Zeichnung auf der Pivotkerze.
+// eventId = Richtung + Pivotzeit + Bestaetigungszeit.
+
+int leftBars = input.int(3, "Pivot links", minval = 1, maxval = 20)
+int rightBars = input.int(3, "Pivot rechts", minval = 1, maxval = 20)
+
+f_swingPack() =>
+    float ph = ta.pivothigh(high, leftBars, rightBars)
+    float pl = ta.pivotlow(low, leftBars, rightBars)
+    bool fireH = not na(ph[rightBars])
+    bool fireL = not na(pl[rightBars])
+    var int highPivotTime = na
+    var int highKnownAt = na
+    var float highPrice = na
+    var int lowPivotTime = na
+    var int lowKnownAt = na
+    var float lowPrice = na
+    var int highId = 0
+    var int lowId = 0
+    var int conflict = 0
+    if fireH and fireL
+        conflict := 1
+    else
+        conflict := 0
+        if fireH
+            int pt = time[rightBars]
+            if na(highPivotTime) or pt != highPivotTime
+                highPivotTime := pt
+                highKnownAt := time_close
+                highPrice := ph[rightBars]
+                highId += 1
+        if fireL
+            int pt = time[rightBars]
+            if na(lowPivotTime) or pt != lowPivotTime
+                lowPivotTime := pt
+                lowKnownAt := time_close
+                lowPrice := pl[rightBars]
+                lowId += 1
+    [highPivotTime, highKnownAt, highPrice, highId, lowPivotTime, lowKnownAt, lowPrice, lowId, conflict]
+
+[hPt, hKn, hPx, hId, lPt, lKn, lPx, lId, conflict] = request.security(syminfo.tickerid, "60", f_swingPack(), barmerge.gaps_off, barmerge.lookahead_off)
+
+plot(time >= hKn ? hPx : na, "Swing High (ab Bestaetigung)", color = color.purple, style = plot.style_linebr)
+plot(time >= lKn ? lPx : na, "Swing Low (ab Bestaetigung)", color = color.aqua, style = plot.style_linebr)
+
+var table t = na
+if barstate.islast
+    if na(t)
+        t := table.new(position.top_right, 1, 4)
+    table.cell(t, 0, 0, "High Pivot " + (na(hPt) ? "-" : str.format_time(hPt, "dd.MM.yyyy HH:mm", "UTC")))
+    table.cell(t, 0, 1, "High known " + (na(hKn) ? "-" : str.format_time(hKn, "dd.MM.yyyy HH:mm", "UTC")))
+    table.cell(t, 0, 2, "Low known " + (na(lKn) ? "-" : str.format_time(lKn, "dd.MM.yyyy HH:mm", "UTC")))
+    table.cell(t, 0, 3, conflict == 1 ? "Konflikt gleiche Pivotzeit" : "OK ids " + str.tostring(hId) + "/" + str.tostring(lId))
