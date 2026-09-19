@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "runAtUtc": "2026-09-19T18:34:26.732Z",
+    "sources": [
+      {
+        "symbol": "BINANCE:BTCUSDT",
+        "kind": "spot",
+        "tf": "1m",
+        "bars": 10080,
+        "first": "2026-09-12T18:35:00.000Z",
+        "last": "2026-09-19T18:34:00.000Z"
+      },
+      {
+        "symbol": "BINANCE:ETHUSDT",
+        "kind": "spot",
+        "tf": "1m",
+        "bars": 14400,
+        "first": "2026-09-09T18:35:00.000Z",
+        "last": "2026-09-19T18:34:00.000Z"
+      },
+      {
+        "symbol": "BINANCE:BTCUSDT.P",
+        "kind": "perp",
+        "tf": "1m",
+        "bars": 14400,
+        "first": "2026-09-09T18:35:00.000Z",
+        "last": "2026-09-19T18:34:00.000Z"
+      },
+      {
+        "symbol": "BINANCE:BTCUSDT",
+        "kind": "spot",
+        "tf": "1d",
+        "bars": 400
+      }
+    ]
+  },
+  "last": {
+    "daily": {
+      "value": 81399.15892841016,
+      "reason": 0
+    },
+    "weekly": {
+      "value": 77826.72122530547,
+      "reason": 0
+    },
+    "monthly": {
+      "value": null,
+      "reason": 1
+    },
+    "ath": {
+      "value": 81703.88206525521,
+      "reason": 6
+    },
+    "atl": {
+      "value": 78065.48971711729,
+      "reason": 6
+    },
+    "athAnchor": 1789832520000,
+    "atlAnchor": 1789498200000
+  },
+  "results": [
+    {
+      "id": "T12",
+      "result": "PASS",
+      "detail": "Referenz 107.5 auf synthetischen Beitraegen"
+    },
+    {
+      "id": "T28",
+      "result": "PASS",
+      "detail": "seed bridge 101.66666666666667"
+    },
+    {
+      "id": "T01",
+      "result": "PASS",
+      "detail": "Reset 2026-09-13T00:00:00.000Z daily=77271.19"
+    },
+    {
+      "id": "T02",
+      "result": "PASS",
+      "detail": "Weekly-Anker 2026-09-14T00:00:00.000Z"
+    },
+    {
+      "id": "T03",
+      "result": "PASS",
+      "detail": "kein Monatswechsel im 7d-Fenster; Anker 2026-09-01T00:00:00.000Z"
+    },
+    {
+      "id": "T11",
+      "result": "PASS",
+      "detail": "srcFirst=2026-09-12T18:35:00.000Z monthAnchor=2026-09-01T00:00:00.000Z reason=1 value=null"
+    },
+    {
+      "id": "T09",
+      "result": "PASS",
+      "detail": "Reset per UTC-Day-Key ohne Mitternachtskerze"
+    },
+    {
+      "id": "T07",
+      "result": "PASS",
+      "detail": "Anker nur aus UTC-Barzeit; Chartzone existiert im Feed nicht"
+    },
+    {
+      "id": "T08",
+      "result": "PASS",
+      "detail": "keine DST-Verschiebung der UTC-Ankerfunktionen"
+    },
+    {
+      "id": "T13",
+      "result": "PASS",
+      "detail": "Nullvolumen aendert Daily nicht"
+    },
+    {
+      "id": "T14",
+      "result": "PASS",
+      "detail": "kein positives Volumen => na"
+    },
+    {
+      "id": "T21",
+      "result": "PASS",
+      "detail": "1m-ATH-Anker 2026-09-19T15:42:00.000Z value=81703.88206525521"
+    },
+    {
+      "id": "T23",
+      "result": "PASS",
+      "detail": "1D-ATH 2025-10-06T00:00:00.000Z px=126199.63 vs 1m-start 2026-09-12T18:35:00.000Z older=true"
+    },
+    {
+      "id": "T22",
+      "result": "PASS",
+      "detail": "Anker vor Historie => kein Vollwert"
+    },
+    {
+      "id": "T34",
+      "result": "PASS",
+      "detail": "1D aelter=true; 1m-ATH reason=6 (AVAILABLE-Stern wenn Rekordhistorie nicht verifiziert)"
+    },
+    {
+      "id": "T25",
+      "result": "PASS",
+      "detail": "ATH-Anker = Extremkerze 2026-09-19T15:42:00.000Z"
+    },
+    {
+      "id": "T26",
+      "result": "PASS",
+      "detail": "Anker wanderte intra-day bei neuem High"
+    },
+    {
+      "id": "T27",
+      "result": "PASS",
+      "detail": "Gleichstand verankert nicht neu (high > recHigh)"
+    },
+    {
+      "id": "T51",
+      "result": "PASS",
+      "detail": "{\"aligned\":[{\"m\":5,\"ok\":true,\"t\":\"2026-09-19T18:29:00.000Z\",\"daily\":81399.06947158456},{\"m\":15,\"ok\":true,\"t\":\"2026-09-19T18:29:00.000Z\",\"daily\":81399.06947158456},{\"m\":60,\"ok\":true,\"t\":\"2026-09-19T17:59:00.000Z\",\"daily\":81398.45816414816},{\"m\":240,\"ok\":true,\"t\":\"2026-09-19T15:59:00.000Z\",\"daily\":81341.45119687126}],\"note\":\"Gleiche 1m-Quelle an TF-Abschluesen; HTF-HLC3 waere eine andere Methode\"}"
+    },
+    {
+      "id": "ACCEPT-TFS",
+      "result": "PASS",
+      "detail": "[{\"tf\":\"1m\",\"bars\":10080,\"weekly\":77826.72122530547,\"monthlyReason\":1},{\"tf\":\"3m\",\"bars\":3361,\"weekly\":77827.22207887926,\"monthlyReason\":1},{\"tf\":\"5m\",\"bars\":2016,\"weekly\":77827.3030594119,\"monthlyReason\":1},{\"tf\":\"15m\",\"bars\":673,\"weekly\":77832.35410978523,\"monthlyReason\":1},{\"tf\":\"30m\",\"bars\":337,\"weekly\":77842.75117364069,\"monthlyReason\":1},{\"tf\":\"1H\",\"bars\":169,\"weekly\":77840.38192355889,\"monthlyReason\":1},{\"tf\":\"4H\",\"bars\":43,\"weekly\":77821.8919854982,\"monthlyReason\":1},{\"tf\":\"1D\",\"bars\":8,\"weekly\":77813.27643656736,\"monthlyReason\":1}]"
+    },
+    {
+      "id": "ACCEPT-SPOT",
+      "result": "PASS",
+      "detail": "ETHUSDT weekly=2494.141292608299 daily=2634.8303414528555"
+    },
+    {
+      "id": "ACCEPT-PERP",
+      "result": "PASS",
+      "detail": "BTCUSDT.P weekly=77652.47859837611 ath=81633.66718124322"
+    },
+    {
+      "id": "ACCEPT-LABELS",
+      "result": "PASS",
+      "detail": "Labeltext Weekly VWAP 14.09.2026"
+    },
+    {
+      "id": "T35",
+      "result": "PASS",
+      "detail": "High knownAt 2026-09-19T18:34:59.999Z pivot 2026-09-19T15:00:00.000Z"
+    },
+    {
+      "id": "T38",
+      "result": "PASS",
+      "detail": "Swing-Anker = Pivottag 00:00 UTC 2026-09-19T00:00:00.000Z"
+    },
+    {
+      "id": "T42b",
+      "result": "PASS",
+      "detail": "zwei Linien High 2026-09-19T15:00:00.000Z Low 2026-09-19T13:00:00.000Z"
+    },
+    {
+      "id": "T41",
+      "result": "PASS",
+      "detail": "Pivots unabhaengig von 1m-Anzeige vs 1H-Aggregation"
+    },
+    {
+      "id": "T54",
+      "result": "PASS",
+      "detail": "Live-letzte Kerze 2026-09-19T18:34:00.000Z dailyLive=81399.15892841016 dailyIfClosedSameBars=81399.15892841016"
+    },
+    {
+      "id": "T17",
+      "result": "PASS",
+      "detail": "Live-Pfad verwendet dieselbe Kerze ohne doppelte historische Beitraege (ein Pass)"
+    },
+    {
+      "id": "T47",
+      "result": "PASS",
+      "detail": "Labeltext = Typ + optionales UTC-Datum; Pixelabstand nur in TradingView-UI"
+    },
+    {
+      "id": "T48",
+      "result": "SKIP",
+      "detail": "horizontaler Zoom nur in TradingView-UI; Gast-Login blockiert Add-to-chart"
+    },
+    {
+      "id": "T49",
+      "result": "SKIP",
+      "detail": "vertikaler Zoom nur in TradingView-UI; Gast-Login blockiert Add-to-chart"
+    },
+    {
+      "id": "T50",
+      "result": "PASS",
+      "detail": "Rechnung unabhaengig von Chartbreite; nur Barserie"
+    },
+    {
+      "id": "REPLAY",
+      "result": "PASS",
+      "detail": "Replay-Stichtag 2026-09-18T18:34:00.000Z daily=79089.76259327201"
+    },
+    {
+      "id": "SYMBOL",
+      "result": "PASS",
+      "detail": "BTC und ETH liefern getrennte VWAP-Werte"
+    }
+  ],
+  "failCount": 0
+}

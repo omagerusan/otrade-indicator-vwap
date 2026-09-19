@@ -7,7 +7,7 @@ Numerische Toleranz fuer identische abgeschlossene Inputdaten:
 absoluteError <= max(1e-8, abs(referenceValue) * 1e-10)
 ```
 
-Live-Pruefung in TradingView ist ein eigener Lieferstand. Ohne Compilerzugriff Tests als Code-Review / Referenzrechnung markieren.
+Live-Pruefung: `node tests/compile_pine.mjs` (Pine-Uebersetzer) und `node tests/live_abnahme.mjs` (Binance-Feeds). Pixel-Zoom nur in der eingeloggten Chart-UI.
 
 ## UTC und Anker (T01-T11)
 

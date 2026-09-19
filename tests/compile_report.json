@@ -1,0 +1,16 @@
+{
+  "checkedAtUtc": "2026-09-19T19:36:00Z",
+  "endpoint": "https://pine-facade.tradingview.com/pine-facade/translate_light?user_name=Guest&pine_id=00000000-0000-0000-0000-000000000000",
+  "script": "src/VWAP_Suite.pine",
+  "http": 200,
+  "success": true,
+  "errorCount": 0,
+  "warningCount": 0,
+  "fixesApplied": [
+    "dynamic_requests = true fuer verschachtelte request.security in f_engine",
+    "max_tables_count entfernt (kein Indicator-Argument in der aktuellen Pine-v6-Signatur)",
+    "input.time-Defaults als const-Millisekunden statt timestamp() (simple int)",
+    "Seed-Symbolvergleich ueber ticker.standard(syminfo.tickerid)",
+    "Snap-Felder nur nach if not na(snap) kopieren; Bar-0-UDT-na wirft sonst beim Feldzugriff"
+  ]
+}

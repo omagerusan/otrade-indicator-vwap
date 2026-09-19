@@ -1,7 +1,10 @@
 # Implementation Notes - VWAP Suite
 
-Stand: 18.09.2026. Hauptskript: `src/VWAP_Suite.pine` (Pine v6).
-Dieses Workspace hat keinen TradingView-Compiler. Kompilierung, Zoom und Replay sind nicht live nachgewiesen.
+Stand: 19.09.2026. Hauptskript: `src/VWAP_Suite.pine` (Pine v6).
+
+Compiler: TradingView `pine-facade/translate_light` (Gast) am 19.09.2026, 0 Fehler / 0 Warnungen (`tests/compile_report.json`). Add-to-chart in der Chart-UI verlangt ein Konto.
+
+Live-Feed: Binance Spot BTCUSDT/ETHUSDT und Perp BTCUSDT, Spiegel-Engine `tests/live_abnahme.mjs`. Zoom-Pixeltests bleiben ohne eingeloggte Chart-UI ungemessen.
 
 ## V1-Definition (nach Benutzerfreigabe)
 
@@ -41,8 +44,14 @@ Dieses Workspace hat keinen TradingView-Compiler. Kompilierung, Zoom und Replay 
 - Ueberlappende Labels werden in V1 nicht verschoben.
 - Swing-Pfad ist auf 8000 Chartpunkte begrenzt; die Summe laeuft weiter.
 - Style-Checkbox blendet nur den Plot aus, nicht die Label-Objekte.
-- Verschachtelte Requests und dynamische Timeframes muessen in der aktuellen TradingView-Version geprueft werden. Falls der konkrete Request die gewuenschte 1m-Historie nicht liefert, ist das ein Datenlimit, kein stiller Fallback auf Chartkerzen.
+- Verschachtelte Requests sind in der geprueften Pine-v6-Uebersetzung zulaessig, wenn `dynamic_requests = true` (im `indicator()` gesetzt). Das ist kein Nachweis, dass ein konkretes Konto 100000 1m-Kerzen liefert.
+- `indicator()` hat in dieser Compilerversion kein Argument `max_tables_count`; es bleibt bei einer Hinweistabelle.
+- `input.time` verlangt `const int`-Defaults. `timestamp("UTC", ...)` ist `simple int` und wird daher nicht als Default verwendet (feste UTC-Millisekunden).
+- Seed-Symbolvergleich nutzt `ticker.standard(syminfo.tickerid)`, weil `syminfo.tickerid` Zusaetze enthalten kann.
 - Tagesbasis-ATH/ATL ist spezifiziert, aber nicht in V1 aktiv.
+- 7-10 Tage 1m-Historie reichen nicht fuer einen vollstaendigen Monthly-VWAP, wenn der Lauf nach dem Monatsanker beginnt; dann `MISSING_PREFIX` statt einer Scheinzahl (19.09.2026 Live: Monthly `na`).
+- 1D-ATH von BTCUSDT Spot lag im Live-Lauf am 06.10.2025 und damit vor dem 1m-Fenster; ohne Seed und ohne manuelle Rekordpruefung kein vollstaendiger Allzeit-ATH-VWAP.
+- `request.security` kann auf Bar 0 ein `na`-Snap liefern. Felder werden nur in `if not na(snap)` gelesen; `and`/`?:` wuerden trotzdem werfen. Ohne Snap bleiben Plots und Labels `na` (kein Chartkerzen-Fallback, kein 0-Ersatz).
 
 ## Prototypen
 
