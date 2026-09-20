@@ -57,11 +57,11 @@ Live-Pruefung: `node tests/compile_pine.mjs` (Pine-Uebersetzer) und `node tests/
 - T35 unbestaetigter Pivot: keine neue Linie (High und Low getrennt)
 - T36 Abschluss rechter Pivotkerze: genau ein Ereignis je Seite
 - T37 gleiches HTF-Ereignis auf vielen Minutenbars: kein Reset
-- T38 Pivot vor Mitternacht, Bestaetigung danach: Anker = Pivottag 00:00 UTC
-- T39 neues High am selben Ankertag: Metadaten neu, Summe ab Mitternacht
-- T40 gleichzeitiger High/Low derselben Pivotzeit: Konfliktregel, kein Zufall
-- T41 verschiedene Chart-TFs: gleiche bestaetigte Pivots
-- T42 Swing aelter als Zeichenpuffer: Wert bleibt, Grafik gekuerzt
+- T38 Pivot vor Mitternacht, Bestaetigung danach: Anker = time der 15m-Pivotkerze
+- T39 neuer extremerer Pivot derselben Seite: Lock wechselt; Lookback allein nicht
+- T40 gleichzeitiger High/Low derselben Pivotzeit: beide unabhaengig
+- T41 verschiedene Chart-TFs (15m/1H/4H): gleiche 15m-Anker
+- T42 Swing aelter als 15m-Pfadfenster: MISSING_PREFIX bzw. gekuerzter Pfad
 - T42b beide Linien parallel sichtbar nach je einem High- und Low-Pivot
 
 ## UI und Ausfuehrung (T43-T58)

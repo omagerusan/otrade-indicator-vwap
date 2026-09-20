@@ -7,10 +7,11 @@ Zeitzone fuer Anker und Datumstexte: `UTC` (UTC+0). Chart-Zeitzone ist nur Anzei
 
 - Chart-Timeframe: Darstellung.
 - Berechnungs-Timeframe `calcTf`: 1 / 5 / 15 / 60 Minuten, Default 1 Minute.
-- Swing-Timeframe: 1H / 4H / 1D, Default 1H, muss >= calcTf bleiben.
+- Swing-Timeframe: fest `"15"` (unabhaengig von Chart und `calcTf`). Lookback Default 50 (10-200), Pivot 3/3.
 - Rekordkontext 1D: nur Kandidatentage und Vergleich, ob verfuegbare Daily-Historie aelter ist als die Intraday-Historie. Liefert keine Minuten-PV-Summen.
 
 Die Engine laeuft in `request.security(syminfo.tickerid, calcTf, f_engine(), gaps_off, lookahead_off, calc_bars_count)`.
+Swing laeuft separat in `request.security(syminfo.tickerid, "15", f_swing15(), lookahead_off)`.
 Zeichenobjekte entstehen nur im Chart-Kontext, nicht innerhalb des Request.
 
 ## UTC-Anker
@@ -39,7 +40,7 @@ Laufende Kerze: `var`-Rollback, kein `varip`. Offene Quellkerze darf den Live-We
 
 Kalender: direkte Periodensummen.
 ATH/ATL: Prefix `cumPV/cumV` unmittelbar vor der Extremkerze, Extremkerze eingeschlossen.
-Swing: Prefix aus 1m-Ringpuffer an der Pivotkerze; Wert ab Pivotzeit, Zeichnung erst wenn Quellzeit >= knownAtTime.
+Swing: eigene 15m-Summe ab der Pivotkerze (`priceSrc`, Default HLC3). Kein calcTf-Prefix. Zeichnung erst wenn Chartzeit >= knownAtTime, Pfad ab Pivot.
 
 ## ATH / ATL
 
@@ -68,9 +69,10 @@ Referenz: P=[100,110,90], V=[10,30,20], nach zwei Kerzen seedPV=4300 seedV=40, E
 
 ## Swing
 
-`ta.pivothigh/low` im Swing-TF. Verarbeitung erst auf der Bestaetigungsbar (`offset = pivotRight`), nicht auf der Pivotbar.
-`eventId = Richtung + pivotTime + knownAtTime`. Gleiche ID nicht erneut anwenden.
-Zwei unabhaengige Anker (High, Low). Linie vor knownAtTime nicht zeichnen.
+Zweiter `request.security(..., "15", f_swing15(), lookahead_off)`, nicht in `f_engine()`.
+`ta.pivothigh/low` mit `not na(ph)` / `not na(pl)`; Pivotzeit `time[pivotRight]`, Preis `ph`/`pl` (kein `ph[pivotRight]`).
+Suchfenster `swingLookback` fuer neue Kandidaten. Anchor Lock: aktiver Anker bleibt, bis ein extremerer Pivot derselben Seite auf der richtigen Preisseite kommt oder der Lock die Preisseite verletzt (High > Close, Low < Close).
+Zwei unabhaengige Akkumulatoren und Punktarrays. Polylinie `xloc.bar_time` aus 15m-Zeiten. Labels `Swing VWAP ▲` / `▼` plus Datum am letzten 15m-Punkt.
 
 ## Ausgabe
 

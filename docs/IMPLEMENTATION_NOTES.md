@@ -2,7 +2,7 @@
 
 Stand: 20.09.2026. Hauptskript: `src/VWAP_Suite.pine` (Pine v6).
 
-Compiler: TradingView `pine-facade/translate_light` (Gast) am 19.09.2026, 0 Fehler / 0 Warnungen (`tests/compile_report.json`). Add-to-chart in der Chart-UI verlangt ein Konto.
+Compiler: TradingView `pine-facade/translate_light` (Gast) am 20.09.2026, 0 Fehler / 0 Warnungen (`tests/compile_report.json`). Add-to-chart in der Chart-UI verlangt ein Konto.
 
 Live-Feed: Binance Spot BTCUSDT/ETHUSDT und Perp BTCUSDT, Spiegel-Engine `tests/live_abnahme.mjs`. Zoom-Pixeltests bleiben ohne eingeloggte Chart-UI ungemessen.
 
@@ -11,16 +11,17 @@ Live-Feed: Binance Spot BTCUSDT/ETHUSDT und Perp BTCUSDT, Spiegel-Engine `tests/
 - Daily / Weekly / Monthly: Anker 00:00 UTC, Woche = Montag.
 - Gemeinsame Festbasis: Default 1 Minute, HLC3, unabhaengig vom Chart.
 - ATH/ATL: Anker = Extremkerze im calcTf, nicht Mitternacht. Kein 1D/1m-Hybrid.
-- Swing: zwei Linien (High und Low), Pivot 1H / 3 / 3, Summe ab der Pivotkerze (1m HLC3). Sichtbare Linie erst ab `knownAtTime`, Pfad dann ab Pivot.
-- `knownAtTime` kommt aus dem geschlossenen Swing-Timeframe-Bar (`lookahead_off`). Das ist konservativer als eine intra-bar Bestaetigung.
+- Swing: zwei Linien (High und Low), fest 15m, Lookback 50, Pivot 3/3, Anchor Lock. Summe ab der 15m-Pivotkerze (`priceSrc`). Sichtbare Linie erst ab `knownAtTime`, Pfad dann ab Pivot.
+- `knownAtTime` kommt aus dem geschlossenen 15m-Bar (`lookahead_off`). Das ist konservativer als eine intra-bar Bestaetigung.
 
 ## Architektur
 
-- Ein `request.security(..., calcTf, f_engine(), lookahead_off, calc_bars_count)`.
-- Innerhalb der Engine verschachtelte Requests: `1D` (Rekordkandidat) und `swingTf` (bestaetigte Pivots).
+- Ein `request.security(..., calcTf, f_engine(), lookahead_off, calc_bars_count)` fuer Daily/Weekly/Monthly/ATH/ATL.
+- Innerhalb der Engine verschachtelter Request: `1D` (Rekordkandidat).
+- Swing: eigener `request.security(..., "15", f_swing15(), lookahead_off)`. Kein Chartkerzen-Fallback.
 - Kalender: direkte Periodensummen, Reset per UTC-Schluessel (nicht `hour==0`).
 - ATH/ATL: Prefix vor der Extremkerze; Extremkerze eingeschlossen.
-- Swing: Prefix aus 1m-Ringpuffer (Zeit/`cumPv`/`cumV` vor der Kerze, Cap 8000) an der Pivotzeit. Fehlt der Eintrag: `MISSING_PREFIX`.
+- Swing: 15m-Pfadsumme ab Pivotzeit bis jetzt, Punktarrays im `SwingSnap`. Fehlt die Pivotkerze im 15m-Fenster (`SWING_PATH_MAX`): `MISSING_PREFIX`.
 - Fuenf `plot()`-Eintraege. Swing als Polylinien, Breite nur in Inputs.
 - Labels: maximal 7 Objekte, Update per `label.set_*`, `label.style_label_left`, Default-Abstand 0.
 - Volumen der offenen Kerze: `var`-Rollback, kein `varip`.
@@ -40,9 +41,9 @@ Live-Feed: Binance Spot BTCUSDT/ETHUSDT und Perp BTCUSDT, Spiegel-Engine `tests/
 - Quellkerzen, die eine UTC-Grenze ueberqueren (calcTf > 1m), werden nicht anteilig zerlegt.
 - Chart-TF < calcTf: Warnung, keine feinere Rechnung.
 - Synthetische Charts (Heikin Ashi, Renko, ...): nicht unterstuetzt.
-- Swing-Labels mit `xloc.bar_time` am `time` der letzten Chartkerze, nicht `bar_index` in den rechten Leerraum.
+- Swing-Labels mit `xloc.bar_time` am letzten 15m-Punkt, nicht `bar_index` in den rechten Leerraum.
 - Ueberlappende Labels werden in V1 nicht verschoben.
-- Swing-Pfad ist auf 8000 Chartpunkte begrenzt; die Summe laeuft weiter.
+- Swing-Pfad ist auf `SWING_PATH_MAX` (500) 15m-Kerzen begrenzt.
 - Style-Checkbox blendet nur den Plot aus, nicht die Label-Objekte.
 - Verschachtelte Requests sind in der geprueften Pine-v6-Uebersetzung zulaessig, wenn `dynamic_requests = true` (im `indicator()` gesetzt). Das ist kein Nachweis, dass ein konkretes Konto 100000 1m-Kerzen liefert.
 - `indicator()` hat in dieser Compilerversion kein Argument `max_tables_count`; es bleibt bei einer Hinweistabelle.

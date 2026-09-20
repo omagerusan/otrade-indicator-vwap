@@ -1,8 +1,8 @@
 # Test Results - VWAP Suite
 
-Datum: 19.09.2026
+Datum: 20.09.2026
 Skript: `src/VWAP_Suite.pine`
-Compiler: TradingView `pine-facade/translate_light` (Gast), siehe `tests/compile_report.json`.
+Compiler: TradingView `pine-facade/translate_light` (Gast), siehe `tests/compile_report.json`. 20.09.2026: 0 Fehler / 0 Warnungen nach 15m-Swing-Umbau.
 Live-Feed: Binance Spot `BTCUSDT` / `ETHUSDT` und USDT-M Perp `BTCUSDT`, Engine-Spiegel in `tests/live_abnahme.mjs`, Rohprotokoll `tests/live_abnahme.json`.
 
 Chart-UI (Add to chart, Pixel-Zoom): Gast-Login blockiert. Pixeltests T48/T49 bleiben SKIP.
@@ -13,11 +13,13 @@ Numerische Toleranz (identische abgeschlossene Beitraege):
 absoluteError <= max(1e-8, abs(referenceValue) * 1e-10)
 ```
 
+Stand: 20.09.2026. Swing-VWAP: fest 15m, Lookback 50, Anchor Lock, zwei unabhaengige Anker.
+
 ## Compiler (tv-compile)
 
 | Pruefung | Ergebnis | Nachweis |
 |---|---|---|
-| Pine v6 translate_light | PASS, 0 Fehler, 0 Warnungen | `tests/compile_report.json`, HTTP 200, `success: true` (erneut 19.09.2026 nach Snap-na-Fix) |
+| Pine v6 translate_light | PASS, 0 Fehler, 0 Warnungen | `tests/compile_report.json`, HTTP 200, `success: true` (erneut 20.09.2026 nach 15m-Swing) |
 | Nested `request.security` | Compiler akzeptiert den Aufruf | `dynamic_requests = true` in `indicator()` |
 | Bar 0: Snap-Objekt `na` | PASS Code | Feldzugriff nur in `if not na(snap)`; Plots/`na`, kein 0-Ersatz |
 | Add to chart im Browser | blockiert (Gast) | TradingView-Dialog "Sign in"; Chart-Lauf nach Fix durch Benutzer
@@ -80,14 +82,14 @@ absoluteError <= max(1e-8, abs(referenceValue) * 1e-10)
 
 | ID | Ergebnis | Nachweis |
 |---|---|---|
-| T35 | PASS Code | Wert ab Pivot berechnet; Polylinie/Labels erst wenn Chartzeit >= knownAt |
-| T36-T37 | Code-Review PASS | Update nur bei neuer Pivotzeit |
-| T38 | PASS Code | Anker = Pivotzeit der 1m-Kerze, nicht 00:00 UTC |
-| T39 | Code-Review PASS | neue Pivotzeit, Prefix am neuen Pivot aus dem Ringpuffer |
-| T40 | Code-Review PASS | High und Low gleichzeitig: kein Update, Konflikt-Hinweis |
-| T41 | PASS live | dieselben 1H-Pivots aus 1m-Aggregation |
-| T42 | Code-Review PASS | Punktpuffer 8000, Summe unabhaengig |
-| T42b | PASS live | High und Low parallel |
+| T35 | PASS Code | Wert ab 15m-Pivot; Polylinie/Labels erst wenn Chartzeit >= knownAt |
+| T36-T37 | Code-Review PASS | High/Low unabhaengig; Lock wechselt nur bei extremerem Pivot derselben Seite |
+| T38 | PASS Code | Anker = time der 15m-Pivotkerze (`time[pivotRight]`), nicht 00:00 UTC und nicht `ph[pivotRight]` |
+| T39 | Code-Review PASS | neuer relevanterer Pivot derselben Seite ersetzt den Lock; Lookback allein loescht ihn nicht |
+| T40 | Code-Review PASS | High und Low gleichzeitig: beide Anker unabhaengig, kein Konflikt-Hinweis |
+| T41 | Code-Review PASS | gleiche 15m-Anker auf 15m/1H/4H (kein Chart-TF-Fallback, fest `SWING_TF="15"`) |
+| T42 | Code-Review PASS | Pfad max. 500 15m-Punkte |
+| T42b | Code-Review PASS | High und Low parallel |
 
 ## UI und Ausfuehrung (T43-T58)
 

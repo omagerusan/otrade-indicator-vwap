@@ -17,13 +17,19 @@ Prioritaet: Benutzerentscheidung vor docs/01 vor docs/02.
 - Entscheidung: Zwei gleichzeitige Linien, bestaetigtes Swing High und bestaetigtes Swing Low.
 - Optionen: Eine Linie (juengstes Hoch oder Tief) / zwei Linien.
 - Technische Auswirkung: Zwei Zustande, zwei Pfade, zwei Endlabels. Ein Inputs-Schalter steuert beide.
-- Standard: Zwei Linien. Pivotregeln sonst: 1H, 3 links / 3 rechts.
+- Standard: Zwei Linien. Pivot 3/3 auf festem 15m-Raster. Lookback 50. Anchor Lock.
 
 ### Swing-Anker (20.09.2026)
 
-- Entscheidung: Summe ab der Pivotkerze (1m HLC3, Pivotkerze eingeschlossen), nicht 00:00 UTC des Pivottags.
+- Entscheidung: Summe ab der tatsaechlichen 15m-Pivotkerze (`priceSrc`, Default HLC3), nicht 00:00 UTC und nicht calcTf/1m.
 - Nach Bestaetigung wird der Pfad bis zur Pivotkerze zurueckgezeichnet. Vor `knownAtTime` keine Linie (kein Lookahead).
-- Startwert ist HLC3 der Pivotkerze, kein Docht-Zwang und kein Clamping auf High/Low.
+- Startwert ist HLC3 (bzw. `priceSrc`) der Pivotkerze, kein Docht-Zwang und kein Clamping auf High/Low.
+- Struktur und VWAP-Basis fest 15m, unabhaengig von Chart-TF und `calcTf`.
+- Anchor Lock: gewaehlter Anker bleibt, bis ein relevanterer Swing derselben Seite kommt oder die Preisseiten-Regel verletzt ist. Kein Sprung nur weil der Anker aelter als das Lookback-Fenster ist.
+
+### Swing-Konflikt gleiche Pivotzeit
+
+- Entscheidung: High- und Low-Anker sind unabhaengig. Gleichzeitige Pivots aendern die andere Seite nicht. Der fruehere Konflikt-Hinweis entfaellt.
 
 ## Temporaere Standards (nicht vom Benutzer neu gesetzt)
 
@@ -42,11 +48,6 @@ Prioritaet: Benutzerentscheidung vor docs/01 vor docs/02.
 
 - Optionen: Kausal (damals bekannter Rekord) / nur aktuelle Ankerkurve rueckwaerts.
 - Temporaerer Standard: Kausal. Endlabel nur am aktiven Anker.
-
-### Swing-Konflikt gleiche Pivotzeit
-
-- Optionen: High bevorzugen / Low bevorzugen / bisherigen Zustand behalten.
-- Temporaerer Standard: Bisheriges Ereignis der betroffenen Seite beibehalten; diagnostisch markieren.
 
 ### Swing-Farbe
 
