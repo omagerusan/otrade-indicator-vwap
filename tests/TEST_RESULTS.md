@@ -80,14 +80,14 @@ absoluteError <= max(1e-8, abs(referenceValue) * 1e-10)
 
 | ID | Ergebnis | Nachweis |
 |---|---|---|
-| T35 | PASS live | High knownAt nach Pivot (Pivot 19.09. 15:00 UTC, knownAt 18:34 UTC im 3/3-Fenster) |
+| T35 | PASS Code | Wert ab Pivot berechnet; Polylinie/Labels erst wenn Chartzeit >= knownAt |
 | T36-T37 | Code-Review PASS | Update nur bei neuer Pivotzeit |
-| T38 | PASS live | Anker = 19.09.2026 00:00 UTC |
-| T39 | Code-Review PASS | neue Pivotzeit, Prefix bleibt Tagesstart |
+| T38 | PASS Code | Anker = Pivotzeit der 1m-Kerze, nicht 00:00 UTC |
+| T39 | Code-Review PASS | neue Pivotzeit, Prefix am neuen Pivot aus dem Ringpuffer |
 | T40 | Code-Review PASS | High und Low gleichzeitig: kein Update, Konflikt-Hinweis |
 | T41 | PASS live | dieselben 1H-Pivots aus 1m-Aggregation |
 | T42 | Code-Review PASS | Punktpuffer 8000, Summe unabhaengig |
-| T42b | PASS live | High 15:00 UTC und Low 13:00 UTC parallel |
+| T42b | PASS live | High und Low parallel |
 
 ## UI und Ausfuehrung (T43-T58)
 

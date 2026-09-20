@@ -249,6 +249,22 @@ f_lookupPrefix(array<int> keys, array<float> pvs, array<float> vs, int dayStart)
     float vB = idx >= 0 ? array.get(vs, idx) : na
     [pvB, vB]
 
+f_pushBarPrefix(array<int> times, array<float> pvs, array<float> vs, int t, float pv, float vol) =>
+    array.push(times, t)
+    array.push(pvs, pv)
+    array.push(vs, vol)
+    if array.size(times) > SWING_POINT_CAP
+        array.shift(times)
+        array.shift(pvs)
+        array.shift(vs)
+    true
+
+f_lookupBarPrefix(array<int> times, array<float> pvs, array<float> vs, int pivotTime) =>
+    int idx = array.indexof(times, pivotTime)
+    float pvB = idx >= 0 ? array.get(pvs, idx) : na
+    float vB = idx >= 0 ? array.get(vs, idx) : na
+    [pvB, vB]
+
 f_engine() =>
     [dAthPx, dAthT, dAtlPx, dAtlT, dFirst] = request.security(syminfo.tickerid, "1D", f_dailyPack(), barmerge.gaps_off, barmerge.lookahead_off)
     [hPt, hKn, hPx, lPt, lKn, lPx, conflict] = request.security(syminfo.tickerid, swingTf, f_swingPack(), barmerge.gaps_off, barmerge.lookahead_off)
@@ -308,6 +324,9 @@ f_engine() =>
     var bool slMissing = false
     var int lastHPt = na
     var int lastLPt = na
+    var array<int> barPrefixTimes = array.new_int()
+    var array<float> barPrefixPv = array.new_float()
+    var array<float> barPrefixV = array.new_float()
 
     if na(srcFirst)
         srcFirst := time
@@ -346,6 +365,8 @@ f_engine() =>
         contribState := 2
     else if v > 0
         contribState := 1
+
+    f_pushBarPrefix(barPrefixTimes, barPrefixPv, barPrefixV, time, cumPv, cumV)
 
     bool newAth = na(recHigh) or high > recHigh
     bool newAtl = na(recLow) or low < recLow
@@ -405,20 +426,20 @@ f_engine() =>
         atlInvalid := false
 
     if not na(hPt) and (na(lastHPt) or hPt != lastHPt)
-        shAnchor := f_utcDayStart(hPt)
+        shAnchor := hPt
         shEvent := hPt
         shKnown := hKn
-        [pvB, vB] = f_lookupPrefix(dayKeys, dayPvBefore, dayVBefore, shAnchor)
+        [pvB, vB] = f_lookupBarPrefix(barPrefixTimes, barPrefixPv, barPrefixV, hPt)
         shPvBefore := pvB
         shVBefore := vB
         shMissing := na(pvB)
         shInvalid := false
         lastHPt := hPt
     if not na(lPt) and (na(lastLPt) or lPt != lastLPt)
-        slAnchor := f_utcDayStart(lPt)
+        slAnchor := lPt
         slEvent := lPt
         slKnown := lKn
-        [pvB2, vB2] = f_lookupPrefix(dayKeys, dayPvBefore, dayVBefore, slAnchor)
+        [pvB2, vB2] = f_lookupBarPrefix(barPrefixTimes, barPrefixPv, barPrefixV, lPt)
         slPvBefore := pvB2
         slVBefore := vB2
         slMissing := na(pvB2)
@@ -449,14 +470,14 @@ f_engine() =>
     [athVal, athReason] = f_eventVwap(cumPv, cumV, athPv0, athV0, athInvalid, athMissing, athUseSeed, athAvailable and not athUseSeed)
     [atlVal, atlReason] = f_eventVwap(cumPv, cumV, atlPv0, atlV0, atlInvalid, atlMissing, atlUseSeed, atlAvailable and not atlUseSeed)
 
-    bool shTooEarly = na(shKnown) or time < shKnown
-    bool slTooEarly = na(slKnown) or time < slKnown
+    bool shHaveEvent = not na(shEvent) and time >= shEvent
+    bool slHaveEvent = not na(slEvent) and time >= slEvent
     [shRaw, shReason0] = f_eventVwap(cumPv, cumV, shPvBefore, shVBefore, shInvalid, shMissing or na(shAnchor), false, false)
     [slRaw, slReason0] = f_eventVwap(cumPv, cumV, slPvBefore, slVBefore, slInvalid, slMissing or na(slAnchor), false, false)
-    float shVal = shTooEarly ? na : shRaw
-    float slVal = slTooEarly ? na : slRaw
-    int shReason = shTooEarly ? RS_NO_EVENT : shReason0
-    int slReason = slTooEarly ? RS_NO_EVENT : slReason0
+    float shVal = shHaveEvent ? shRaw : na
+    float slVal = slHaveEvent ? slRaw : na
+    int shReason = shHaveEvent ? shReason0 : RS_NO_EVENT
+    int slReason = slHaveEvent ? slReason0 : RS_NO_EVENT
 
     Snap out = Snap.new()
     out.daily := dailyVal
@@ -516,10 +537,12 @@ int atlReason = RS_NO_EVENT
 float shVal = na
 int shAnchor = na
 int shEvent = na
+int shKnown = na
 int shReason = RS_NO_EVENT
 float slVal = na
 int slAnchor = na
 int slEvent = na
+int slKnown = na
 int slReason = RS_NO_EVENT
 int srcFirst = na
 int dailyOlderAth = 0
@@ -544,10 +567,12 @@ if not na(snap)
     shVal := snap.sh
     shAnchor := snap.shAnchor
     shEvent := snap.shEvent
+    shKnown := snap.shKnown
     shReason := snap.shReason
     slVal := snap.sl
     slAnchor := snap.slAnchor
     slEvent := snap.slEvent
+    slKnown := snap.slKnown
     slReason := snap.slReason
     srcFirst := snap.srcFirst
     dailyOlderAth := snap.dailyOlderAth
@@ -597,18 +622,20 @@ f_labelText(string kind, int anchorTs, int reason, bool includeDate) =>
         txt := txt + " [" + calcTf + "m]"
     txt
 
-f_upsertLabel(label id, bool vis, float px, color col, string txt) =>
+f_upsertLabel(label id, bool vis, float px, color col, string txt, bool atBarTime = false) =>
     label result = id
     if not vis or na(px)
         if not na(result)
             label.delete(result)
             result := na
     else
-        int x = bar_index + extraLabelOffset
+        int x = atBarTime ? time : bar_index + extraLabelOffset
+        string xlocId = atBarTime ? xloc.bar_time : xloc.bar_index
         if na(result)
-            result := label.new(x, px, txt, xloc.bar_index, yloc.price, color.new(color.white, 100), label.style_label_left, col, f_labelSize(), text.align_left)
+            result := label.new(x, px, txt, xlocId, yloc.price, color.new(color.white, 100), label.style_label_left, col, f_labelSize(), text.align_left)
         else
-            label.set_xy(result, x, px)
+            label.set_xloc(result, x, xlocId)
+            label.set_y(result, px)
             label.set_text(result, txt)
             label.set_textcolor(result, col)
             label.set_size(result, f_labelSize())
@@ -629,10 +656,12 @@ bool visWeeklyLbl = showWeekly and showRegularLabels and f_canShow(weeklyReason)
 bool visMonthlyLbl = showMonthly and showRegularLabels and f_canShow(monthlyReason) and not na(monthlyVal)
 bool visAthLbl = showAth and showRegularLabels and f_canShow(athReason) and not na(athVal)
 bool visAtlLbl = showAtl and showRegularLabels and f_canShow(atlReason) and not na(atlVal)
-bool visSh = showSwing and f_canShow(shReason) and not na(shVal)
-bool visSl = showSwing and f_canShow(slReason) and not na(slVal)
-bool visShLbl = visSh and showSwingLabels
-bool visSlLbl = visSl and showSwingLabels
+bool shCollect = showSwing and f_canShow(shReason) and not na(shVal)
+bool slCollect = showSwing and f_canShow(slReason) and not na(slVal)
+bool shDraw = shCollect and not na(shKnown) and time >= shKnown
+bool slDraw = slCollect and not na(slKnown) and time >= slKnown
+bool visShLbl = shDraw and showSwingLabels
+bool visSlLbl = slDraw and showSwingLabels
 
 if barstate.islast
     lblDaily := f_upsertLabel(lblDaily, visDailyLbl, dailyVal, colDaily, f_labelText("Daily", dailyAnchor, dailyReason, showAnchorDate))
@@ -640,8 +669,8 @@ if barstate.islast
     lblMonthly := f_upsertLabel(lblMonthly, visMonthlyLbl, monthlyVal, colMonthly, f_labelText("Monthly", monthlyAnchor, monthlyReason, showAnchorDate))
     lblAth := f_upsertLabel(lblAth, visAthLbl, athVal, colAth, f_labelText("ATH", athAnchor, athReason, showAnchorDate))
     lblAtl := f_upsertLabel(lblAtl, visAtlLbl, atlVal, colAtl, f_labelText("ATL", atlAnchor, atlReason, showAnchorDate))
-    lblSh := f_upsertLabel(lblSh, visShLbl, shVal, colSwing, f_labelText("Swing High", shAnchor, shReason, showAnchorDate))
-    lblSl := f_upsertLabel(lblSl, visSlLbl, slVal, colSwing, f_labelText("Swing Low", slAnchor, slReason, showAnchorDate))
+    lblSh := f_upsertLabel(lblSh, visShLbl, shVal, colSwing, f_labelText("Swing High", shAnchor, shReason, showAnchorDate), true)
+    lblSl := f_upsertLabel(lblSl, visSlLbl, slVal, colSwing, f_labelText("Swing Low", slAnchor, slReason, showAnchorDate), true)
 
 var array<int> shTimes = array.new_int()
 var array<float> shVals = array.new_float()
@@ -671,8 +700,8 @@ f_collect(array<int> times, array<float> vals, bool vis, float px, int gen, int 
                 array.shift(vals)
     newGen
 
-shGen := f_collect(shTimes, shVals, visSh, shVal, shEvent, shGen)
-slGen := f_collect(slTimes, slVals, visSl, slVal, slEvent, slGen)
+shGen := f_collect(shTimes, shVals, shCollect, shVal, shEvent, shGen)
+slGen := f_collect(slTimes, slVals, slCollect, slVal, slEvent, slGen)
 
 f_pointsFrom(array<int> times, array<float> vals) =>
     array<chart.point> pts = array.new<chart.point>()
@@ -691,9 +720,9 @@ if barstate.islast
         polySl := na
     array<chart.point> shPts = f_pointsFrom(shTimes, shVals)
     array<chart.point> slPts = f_pointsFrom(slTimes, slVals)
-    if array.size(shPts) >= 2
+    if shDraw and array.size(shPts) >= 2
         polySh := polyline.new(shPts, false, false, xloc.bar_time, colSwing, na, line.style_solid, swingWidth)
-    if array.size(slPts) >= 2
+    if slDraw and array.size(slPts) >= 2
         polySl := polyline.new(slPts, false, false, xloc.bar_time, colSwing, na, line.style_solid, swingWidth)
 
 f_reasonText(string name, int reason, int srcFirst, bool older) =>

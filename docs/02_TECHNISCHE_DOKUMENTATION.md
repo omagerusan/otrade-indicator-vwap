@@ -39,7 +39,7 @@ Laufende Kerze: `var`-Rollback, kein `varip`. Offene Quellkerze darf den Live-We
 
 Kalender: direkte Periodensummen.
 ATH/ATL: Prefix `cumPV/cumV` unmittelbar vor der Extremkerze, Extremkerze eingeschlossen.
-Swing: Prefix aus gespeicherter UTC-Tagesbaseline des Pivottags; Anzeige erst wenn Quellzeit >= knownAtTime.
+Swing: Prefix aus 1m-Ringpuffer an der Pivotkerze; Wert ab Pivotzeit, Zeichnung erst wenn Quellzeit >= knownAtTime.
 
 ## ATH / ATL
 

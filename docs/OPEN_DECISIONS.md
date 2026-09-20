@@ -17,7 +17,13 @@ Prioritaet: Benutzerentscheidung vor docs/01 vor docs/02.
 - Entscheidung: Zwei gleichzeitige Linien, bestaetigtes Swing High und bestaetigtes Swing Low.
 - Optionen: Eine Linie (juengstes Hoch oder Tief) / zwei Linien.
 - Technische Auswirkung: Zwei Zustande, zwei Pfade, zwei Endlabels. Ein Inputs-Schalter steuert beide.
-- Standard: Zwei Linien. Pivotregeln sonst: 1H, 3 links / 3 rechts, Anker 00:00 UTC am Pivottag.
+- Standard: Zwei Linien. Pivotregeln sonst: 1H, 3 links / 3 rechts.
+
+### Swing-Anker (20.09.2026)
+
+- Entscheidung: Summe ab der Pivotkerze (1m HLC3, Pivotkerze eingeschlossen), nicht 00:00 UTC des Pivottags.
+- Nach Bestaetigung wird der Pfad bis zur Pivotkerze zurueckgezeichnet. Vor `knownAtTime` keine Linie (kein Lookahead).
+- Startwert ist HLC3 der Pivotkerze, kein Docht-Zwang und kein Clamping auf High/Low.
 
 ## Temporaere Standards (nicht vom Benutzer neu gesetzt)
 
