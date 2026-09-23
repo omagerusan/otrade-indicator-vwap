@@ -6,12 +6,15 @@ Zeitzone fuer Anker und Datumstexte: `UTC` (UTC+0). Chart-Zeitzone ist nur Anzei
 ## Datenkontexte
 
 - Chart-Timeframe: Darstellung.
-- Berechnungs-Timeframe `calcTf`: 1 / 5 / 15 / 60 Minuten, Default 1 Minute.
-- Rekordkontext 1D: nur Kandidatentage und Vergleich, ob verfuegbare Daily-Historie aelter ist als die Intraday-Historie. Liefert keine Minuten-PV-Summen.
+- Berechnungs-Timeframe `calcTf`: 1 / 5 / 15 / 60 Minuten, Default 1 Minute. Gilt fuer Daily, Weekly und Monthly.
+- ATH/ATL-Intervall: fest 60 Minuten. Summe ab der Daily-Rekordkerze. Kein Input.
+- Rekordkontext 1D: offizieller ATH-/ATL-Zeitpunkt (`dAthT`, `dAtlT`) ueber bis zu 15000 Tagesbars. Das ist der Boersen-Tagesbeginn der Rekordkerze, nicht die einzelne Minuten-Wick.
 
-Die Engine laeuft in `request.security(syminfo.tickerid, calcTf, f_engine(), gaps_off, lookahead_off, calc_bars_count)`.
+Die Kalender-Engine laeuft in `request.security(syminfo.tickerid, calcTf, f_engine(), gaps_off, lookahead_off, calc_bars_count)`.
+Der Rekord laeuft in `request.security(..., "1D", f_dailyRec(), calc_bars_count = 15000)`.
+Die ATH/ATL-Summe laeuft in `request.security(..., "60", f_recordEngine(), calc_bars_count)`.
 Zeichenobjekte entstehen nur im Chart-Kontext, nicht innerhalb des Request.
-`Snap` enthaelt nur Skalare. Keine Arrays aus `request.security` (Speicherlimit RE10139). Swing-VWAP ist nicht Teil dieses Skripts.
+Alle Requests liefern nur Skalare. Keine Arrays aus `request.security` (Speicherlimit RE10139). Swing-VWAP ist nicht Teil dieses Skripts.
 
 ## UTC-Anker
 
@@ -38,32 +41,16 @@ VWAP = PV / V wenn V > 0 sonst na
 Laufende Kerze: `var`-Rollback, kein `varip`. Offene Quellkerze darf den Live-Wert aendern.
 
 Kalender: direkte Periodensummen.
-ATH/ATL: Prefix `cumPV/cumV` unmittelbar vor der Extremkerze, Extremkerze eingeschlossen.
+ATH/ATL: Summe ab der Daily-Rekordkerze auf 60 Minuten, Rekordkerze eingeschlossen. Neuer Daily-Rekord startet die Summe neu.
 
 ## ATH / ATL
 
-Modul A findet Rekorde auf calcTf: neues High > bisher, neues Low < bisher.
-Gleichstand verankert nicht neu. Neues Extrem an spaeterer Kerze inklusive gleichem UTC-Tag verschiebt den Anker.
+Der Anker kommt aus der Daily-Historie, nicht aus dem hoechsten High der geladenen `calcTf`-Bars.
 
-`recordHistoryCoverage`:
+- Daily-Anker innerhalb der 60-Minuten-Historie: VWAP ab dieser Kerze.
+- Daily-Anker davor: Wert `na`, Reason `MISSING_PREFIX`, Hinweis mit Daily-Datum. Kein manueller Ersatz.
 
-- `VERIFIED_SCOPE` wenn der Nutzer den Historienbeginn als geprueft markiert
-- sonst `AVAILABLE_HISTORY_ONLY` (Label `ATH*` / `ATL*` plus Hinweis)
-
-Liegt der Anker vor der ersten Quellkerze und kein gueltiger Seed: Wert `na`, Reason `MISSING_PREFIX`.
-1D-Extrem vor Intraday-Start ohne Seed: nicht als vollstaendiger 1m-VWAP ausgeben.
-
-## Seeds (ATH/ATL)
-
-```text
-Seed gilt fuer [anchorTime, seedUntilExclusive)
-Pine addiert ab seedUntilExclusive inklusive
-```
-
-Pflichtabgleich: Symbol, calcTf, Preisquelle, Ankerzeit, seedV >= 0, keine Luecke, keine Doppelzaehlung.
-Neuer Ankertag verwirft den alten Seed.
-
-Referenz: P=[100,110,90], V=[10,30,20], nach zwei Kerzen seedPV=4300 seedV=40, Ergebnis 101.666...
+Das Label heisst `ATH VWAP` bzw. `ATL VWAP`.
 
 ## Ausgabe
 

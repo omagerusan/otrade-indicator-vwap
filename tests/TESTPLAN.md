@@ -35,22 +35,19 @@ Live-Pruefung: `node tests/compile_pine.mjs` (Pine-Uebersetzer) und `node tests/
 - T19 Preisquelle wechseln aendert Werte, Seeds neu pruefen
 - T20 Berechnungsbasis wechseln ist Methodenwechsel
 
-## ATH/ATL und Seeds (T21-T34)
+## ATH/ATL (T21-T27)
 
-- T21 ATH ausserhalb Chart-, innerhalb Quellhistorie: Extremkerzen-Anker
-- T22 ATH vor Quellhistorie ohne Seed: kein Vollwert
-- T23 alter ATL nahe Symbolbeginn: Rekord vs Volumen getrennt
-- T24 1D kennt Anker, Minuten fehlen: keine Minutenpraezision
-- T25 neuer Rekord nachmittags: Anker = Extremkerze, nicht 00:00; Historie vor Erkennung unveraendert
-- T26 mehrere Rekorde am selben Tag: Anker wandert zur neuen Extremkerze
+- T21 Daily-Rekord innerhalb der 60-Minuten-Historie: Anker = Daily-Rekordkerze, nicht der erste calcTf-Bar
+- T22 BTC-Allzeithoch Oktober 2025 darf nicht als Beginn der 1-Minuten-Historie (zum Beispiel 16.07.2026) erscheinen
+- T23 Daily-Anker vor der 60-Minuten-Historie: Wert `na`, Hinweis mit Daily-Datum
+- T24 1D liefert den Ankerzeitpunkt; die Summe bleibt auf 60 Minuten und wird nicht aus Tagesvolumen gebaut
+- T25 neues Daily-High: Summe startet an der neuen Rekordkerze neu, aeltere Summe laeuft nicht weiter
+- T26 mehrere Rekorde: Anker folgt dem jeweils neuen Daily-Extrem
 - T27 gleicher Rekordpreis spaeterer Tag: kein Neuanker
-- T28 Seed vs volle Referenz nach Stichtag gleich
-- T29 Seed mit Doppelzaehlung der Stichtagskerze: Fehler
-- T30 Seed-Stichtag vor Quellbeginn: Luecke
-- T31 Seed passt nicht zu Symbol/Quelle/TF/Anker: ignorieren
-- T32 Replay vor Stichtag: Seed nicht verwenden
-- T33 neuer Ankertag: alten Seed verwerfen
-- T34 mehr Rekordhistorie: Status aendert sich nachvollziehbar
+
+## Seeds und Rekordpruefung (T28-T34)
+
+Entfernt. Kein Seed und kein `recordVerified` mehr in `src/VWAP_Suite.pine`.
 
 ## Swing (T35-T42b)
 
