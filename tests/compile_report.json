@@ -1,5 +1,5 @@
 {
-  "checkedAtUtc": "2026-09-20T14:30:00Z",
+  "checkedAtUtc": "2026-09-23T18:10:00Z",
   "endpoint": "https://pine-facade.tradingview.com/pine-facade/translate_light?user_name=Guest&pine_id=00000000-0000-0000-0000-000000000000",
   "script": "src/VWAP_Suite.pine",
   "http": 200,
@@ -12,6 +12,6 @@
     "input.time-Defaults als const-Millisekunden statt timestamp() (simple int)",
     "Seed-Symbolvergleich ueber ticker.standard(syminfo.tickerid)",
     "Snap-Felder nur nach if not na(snap) kopieren; Bar-0-UDT-na wirft sonst beim Feldzugriff",
-    "Swing von f_engine getrennt: request.security 15m, SwingSnap, Anchor Lock, Lookback 50"
+    "Swing-VWAP und ungenutzte Tagesbasis-Arrays entfernt (RE10139)"
   ]
 }

@@ -80,6 +80,8 @@ Stand: 20.09.2026. Swing-VWAP: fest 15m, Lookback 50, Anchor Lock, zwei unabhaen
 
 ## Swing (T35-T42b)
 
+Entfernt aus `src/VWAP_Suite.pine` am 23.09.2026 (RE10139). Die folgenden Zeilen beschreiben den Stand vor dem Entfernen und gelten nicht mehr fuer das Hauptskript.
+
 | ID | Ergebnis | Nachweis |
 |---|---|---|
 | T35 | PASS Code | Wert ab 15m-Pivot; Polylinie/Labels erst wenn Chartzeit >= knownAt |
@@ -95,7 +97,7 @@ Stand: 20.09.2026. Swing-VWAP: fest 15m, Lookback 50, Anchor Lock, zwei unabhaen
 
 | ID | Ergebnis | Nachweis |
 |---|---|---|
-| T43-T45 | Code-Review PASS | Inputs steuern Plotfarbe und Labels; Swing-Schalter beide Linien |
+| T43-T45 | Code-Review PASS | Inputs steuern Plotfarbe und Labels der fuenf regulaeren VWAPs |
 | T46 | dokumentiert | Style-Checkbox != Label-Objekte |
 | T47 | PASS Text | Label = Typ + UTC-Datum |
 | T48 | SKIP | horizontaler Zoom nur in TradingView-UI (Login) |
@@ -106,8 +108,8 @@ Stand: 20.09.2026. Swing-VWAP: fest 15m, Lookback 50, Anchor Lock, zwei unabhaen
 | T53 | Code-Review PASS | keine Viewport-APIs in der Engine |
 | T54 | PASS live | letzte 1m-Kerze als Live-Sample; Replay-Schnitt 18.09. Daily 79089.76 |
 | T54b | PASS Code | `request.security` darf auf Bar 0 `na` liefern; Chart liest keine UDT-Felder ohne Objektpruefung |
-| T55 | Code-Review PASS | `label.delete` / `polyline.delete` bei aus |
-| T56 | Code-Review PASS | begrenzte Arrays und wiederverwendete Objekte |
+| T55 | Code-Review PASS | `label.delete` bei aus |
+| T56 | Code-Review PASS | fuenf wiederverwendete Labels, eine Hinweistabelle |
 | T57 | N/A | Tagesbasis nicht in V1 |
 | T58 | PASS live | Monthly `na` statt 0 bei fehlendem Prefix |
 

@@ -1,5 +1,5 @@
 //@version=6
-indicator("oTrade VWAP", overlay = true, dynamic_requests = true, max_labels_count = 20, max_polylines_count = 10, max_lines_count = 10)
+indicator("oTrade VWAP", overlay = true, dynamic_requests = true, max_labels_count = 20)
 
 // Overlay-Engine im festen Berechnungs-Timeframe. Plots und Zeichenobjekte nur im Chart-Kontext.
 
@@ -9,18 +9,12 @@ const int RS_OK = 0
 const int RS_MISSING_PREFIX = 1
 const int RS_NO_VOLUME = 2
 const int RS_INVALID = 3
-const int RS_NO_EVENT = 4
 const int RS_SEEDED = 5
 const int RS_AVAILABLE = 6
-const int DAY_BASELINE_CAP = 400
-const int SWING_POINT_CAP = 8000
-const int SWING_PATH_MAX = 500
-const string SWING_TF = "15"
 
 string GRP_VWAP = "VWAP"
 string GRP_LABEL = "Beschriftung"
 string GRP_CALC = "Berechnung und Daten"
-string GRP_SWING = "Swing"
 string GRP_REC = "ATH/ATL - Datenpruefung"
 string GRP_SEED_ATH = "ATH/ATL - Historischer Startbestand ATH"
 string GRP_SEED_ATL = "ATH/ATL - Historischer Startbestand ATL"
@@ -35,13 +29,9 @@ bool showAth = input.bool(false, "ATH VWAP", inline = "ath", group = GRP_VWAP, t
 color colAth = input.color(color.new(#FFFFFF, 0), "", inline = "ath", group = GRP_VWAP, display = display.none)
 bool showAtl = input.bool(false, "ATL VWAP", inline = "atl", group = GRP_VWAP, tooltip = "Steuert Linie und zugehoeriges Textlabel gemeinsam. Die Style-Checkbox betrifft nur den Plot.", display = display.none)
 color colAtl = input.color(color.new(#FFFFFF, 0), "", inline = "atl", group = GRP_VWAP, display = display.none)
-bool showSwing = input.bool(true, "Swing VWAP", inline = "swing", group = GRP_VWAP, tooltip = "Steuert beide Swing-Linien (High und Low) und deren Labels.", display = display.none)
-color colSwing = input.color(color.new(#673AB7, 0), "", inline = "swing", group = GRP_VWAP, display = display.none)
-int swingWidth = input.int(2, "Width", minval = 1, maxval = 4, inline = "swing", group = GRP_VWAP, display = display.none)
 bool showRegularLabels = input.bool(true, "Label VWAPs", group = GRP_VWAP, display = display.none)
-bool showSwingLabels = input.bool(true, "Label Swing VWAP", group = GRP_VWAP, display = display.none)
 
-bool showAnchorDate = input.bool(true, "Ankerdatum anzeigen", group = GRP_LABEL, tooltip = "Datum des Berechnungsbeginns in UTC, nicht der spaeteren Erkennung eines Swings.", display = display.none)
+bool showAnchorDate = input.bool(true, "Ankerdatum anzeigen", group = GRP_LABEL, tooltip = "Datum des Berechnungsbeginns in UTC.", display = display.none)
 string labelSizeName = input.string("Klein", "Label-Groesse", options = ["Sehr klein", "Klein", "Normal"], group = GRP_LABEL, display = display.none)
 int extraLabelOffset = input.int(0, "Zusaetzlicher Abstand (Kerzen)", minval = 0, maxval = 30, group = GRP_LABEL, tooltip = "0 verankert das Label direkt am Linienende. Zusaetzliche Kerzenabstaende veraendern sich beim Zoomen.", display = display.none)
 bool showBasisInLabel = input.bool(false, "Berechnungsbasis im Label", group = GRP_LABEL, display = display.none)
@@ -50,10 +40,6 @@ string calcTf = input.string("1", "Berechnungsintervall", options = ["1", "5", "
 string priceSrc = input.string("HLC3", "Preisquelle", options = ["HLC3", "HL2", "Close", "OHLC4"], group = GRP_CALC, display = display.none)
 string hintMode = input.string("Nur bei Einschraenkungen", "Datenhinweise", options = ["Nur bei Einschraenkungen", "Details"], group = GRP_CALC, display = display.none)
 int requestedSourceBars = input.int(100000, "Quellhistorie anfordern", minval = 1, maxval = 200000, group = GRP_CALC, display = display.none)
-
-int swingLookback = input.int(50, "Swing Lookback", minval = 10, maxval = 200, group = GRP_SWING, tooltip = "Anzahl der 15-Minuten-Kerzen, innerhalb derer ein neuer Swing High/Low gesucht wird. Aktive Anker bleiben (Anchor Lock), bis ein relevanterer Swing derselben Seite kommt.", display = display.none)
-int pivotLeft = input.int(3, "Pivot links", minval = 1, maxval = 10, group = GRP_SWING, display = display.none)
-int pivotRight = input.int(3, "Pivot rechts", minval = 1, maxval = 10, group = GRP_SWING, tooltip = "Der Swing wird erst nach Abschluss dieser Anzahl rechter 15m-Kerzen bestaetigt.", display = display.none)
 
 bool recordVerified = input.bool(false, "Rekordhistorie manuell geprueft", group = GRP_REC, display = display.none)
 int verifiedStart = input.time(1483228800000, "Gepruefter Historienbeginn UTC", group = GRP_REC, display = display.none)
@@ -102,20 +88,6 @@ type Snap
     int dailyOlderAtl
     int seededAth
     int seededAtl
-
-type SwingSnap
-    float sh
-    int shAnchor
-    int shKnown
-    int shReason
-    float sl
-    int slAnchor
-    int slKnown
-    int slReason
-    array<int> shTimes
-    array<float> shVals
-    array<int> slTimes
-    array<float> slVals
 
 f_utcDayStart(int ts) =>
     timestamp(ANCHOR_TZ, year(ts, ANCHOR_TZ), month(ts, ANCHOR_TZ), dayofmonth(ts, ANCHOR_TZ), 0, 0)
@@ -212,175 +184,6 @@ f_dailyPack() =>
         recLt := time
     [recH, recHt, recL, recLt, firstT]
 
-f_priceAt(int i) =>
-    switch priceSrc
-        "HL2" => hl2[i]
-        "Close" => close[i]
-        "OHLC4" => ohlc4[i]
-        => hlc3[i]
-
-f_fillSwingPath(int anchorTime, array<int> times, array<float> vals) =>
-    array.clear(times)
-    array.clear(vals)
-    float last = na
-    int reason = RS_NO_EVENT
-    if na(anchorTime)
-        [last, reason]
-    else
-        int maxBars = math.min(bar_index, SWING_PATH_MAX)
-        float pv = 0.0
-        float vol = 0.0
-        bool started = false
-        bool invalid = false
-        if maxBars >= 0
-            for i = maxBars to 0
-                if time[i] >= anchorTime
-                    started := true
-                    float p = f_priceAt(i)
-                    float v = volume[i]
-                    if na(v) or v < 0 or (v > 0 and na(p))
-                        invalid := true
-                        break
-                    if v > 0
-                        pv += p * v
-                        vol += v
-                    if vol > 0
-                        last := pv / vol
-                        array.push(times, time[i])
-                        array.push(vals, last)
-                        if array.size(times) > SWING_POINT_CAP
-                            array.shift(times)
-                            array.shift(vals)
-        if not started
-            reason := RS_MISSING_PREFIX
-            last := na
-            array.clear(times)
-            array.clear(vals)
-        else if invalid
-            reason := RS_INVALID
-            last := na
-            array.clear(times)
-            array.clear(vals)
-        else if vol <= 0
-            reason := RS_NO_VOLUME
-            last := na
-            array.clear(times)
-            array.clear(vals)
-        else
-            reason := RS_OK
-        [last, reason]
-
-f_swing15() =>
-    float ph = ta.pivothigh(high, pivotLeft, pivotRight)
-    float pl = ta.pivotlow(low, pivotLeft, pivotRight)
-    int searchLength = math.max(1, swingLookback - pivotRight)
-    float bestHPx = na
-    int bestHConf = na
-    float bestLPx = na
-    int bestLConf = na
-    for i = 0 to searchLength - 1
-        if not na(ph[i])
-            if na(bestHPx) or ph[i] > bestHPx
-                bestHPx := ph[i]
-                bestHConf := i
-        if not na(pl[i])
-            if na(bestLPx) or pl[i] < bestLPx
-                bestLPx := pl[i]
-                bestLConf := i
-    bool haveH = not na(bestHConf)
-    bool haveL = not na(bestLConf)
-    int candHTime = na
-    int candHKnown = na
-    int candLTime = na
-    int candLKnown = na
-    if haveH
-        candHTime := time[bestHConf + pivotRight]
-        candHKnown := time_close[bestHConf]
-    if haveL
-        candLTime := time[bestLConf + pivotRight]
-        candLKnown := time_close[bestLConf]
-    bool candHOk = haveH and bestHPx > close
-    bool candLOk = haveL and bestLPx < close
-
-    var int lockHTime = na
-    var float lockHPx = na
-    var int lockHKnown = na
-    var int lockLTime = na
-    var float lockLPx = na
-    var int lockLKnown = na
-
-    if not na(lockHTime)
-        if not (lockHPx > close)
-            if candHOk
-                lockHTime := candHTime
-                lockHPx := bestHPx
-                lockHKnown := candHKnown
-            else
-                lockHTime := na
-                lockHPx := na
-                lockHKnown := na
-        else if candHOk and candHTime != lockHTime and bestHPx > lockHPx
-            lockHTime := candHTime
-            lockHPx := bestHPx
-            lockHKnown := candHKnown
-    else if candHOk
-        lockHTime := candHTime
-        lockHPx := bestHPx
-        lockHKnown := candHKnown
-
-    if not na(lockLTime)
-        if not (lockLPx < close)
-            if candLOk
-                lockLTime := candLTime
-                lockLPx := bestLPx
-                lockLKnown := candLKnown
-            else
-                lockLTime := na
-                lockLPx := na
-                lockLKnown := na
-        else if candLOk and candLTime != lockLTime and bestLPx < lockLPx
-            lockLTime := candLTime
-            lockLPx := bestLPx
-            lockLKnown := candLKnown
-    else if candLOk
-        lockLTime := candLTime
-        lockLPx := bestLPx
-        lockLKnown := candLKnown
-
-    var array<int> shTimes = array.new_int()
-    var array<float> shVals = array.new_float()
-    var array<int> slTimes = array.new_int()
-    var array<float> slVals = array.new_float()
-    [shLast, shReason] = f_fillSwingPath(lockHTime, shTimes, shVals)
-    [slLast, slReason] = f_fillSwingPath(lockLTime, slTimes, slVals)
-
-    SwingSnap out = SwingSnap.new()
-    out.sh := shLast
-    out.shAnchor := lockHTime
-    out.shKnown := lockHKnown
-    out.shReason := na(lockHTime) ? RS_NO_EVENT : shReason
-    out.sl := slLast
-    out.slAnchor := lockLTime
-    out.slKnown := lockLKnown
-    out.slReason := na(lockLTime) ? RS_NO_EVENT : slReason
-    out.shTimes := shTimes
-    out.shVals := shVals
-    out.slTimes := slTimes
-    out.slVals := slVals
-    out
-
-f_trimDayBaselines(array<int> keys, array<float> pvs, array<float> vs) =>
-    if array.size(keys) > DAY_BASELINE_CAP
-        array.shift(keys)
-        array.shift(pvs)
-        array.shift(vs)
-
-f_lookupPrefix(array<int> keys, array<float> pvs, array<float> vs, int dayStart) =>
-    int idx = array.indexof(keys, dayStart)
-    float pvB = idx >= 0 ? array.get(pvs, idx) : na
-    float vB = idx >= 0 ? array.get(vs, idx) : na
-    [pvB, vB]
-
 f_engine() =>
     [dAthPx, dAthT, dAtlPx, dAtlT, dFirst] = request.security(syminfo.tickerid, "1D", f_dailyPack(), barmerge.gaps_off, barmerge.lookahead_off)
 
@@ -402,9 +205,6 @@ f_engine() =>
     var bool dayInvalid = false
     var bool weekInvalid = false
     var bool monthInvalid = false
-    var array<int> dayKeys = array.new_int()
-    var array<float> dayPvBefore = array.new_float()
-    var array<float> dayVBefore = array.new_float()
     var float recHigh = na
     var float recLow = na
     var int athAnchor = na
@@ -439,10 +239,6 @@ f_engine() =>
         dayPv := 0.0
         dayV := 0.0
         dayInvalid := false
-        array.push(dayKeys, dayKey)
-        array.push(dayPvBefore, cumPv)
-        array.push(dayVBefore, cumV)
-        f_trimDayBaselines(dayKeys, dayPvBefore, dayVBefore)
     if newWeek
         weekAnchor := weekKey
         weekPv := 0.0
@@ -568,36 +364,23 @@ f_engine() =>
     out
 
 Snap snap = request.security(syminfo.tickerid, calcTf, f_engine(), barmerge.gaps_off, barmerge.lookahead_off, calc_bars_count = requestedSourceBars)
-SwingSnap swingSnap = request.security(syminfo.tickerid, SWING_TF, f_swing15(), barmerge.gaps_off, barmerge.lookahead_off)
 
 // request.security kann auf Bar 0 na liefern. Feldzugriff auf na-UDT wirft; Ternary/and schuetzen nicht.
 float dailyVal = na
 int dailyAnchor = na
-int dailyReason = RS_NO_EVENT
+int dailyReason = na
 float weeklyVal = na
 int weeklyAnchor = na
-int weeklyReason = RS_NO_EVENT
+int weeklyReason = na
 float monthlyVal = na
 int monthlyAnchor = na
-int monthlyReason = RS_NO_EVENT
+int monthlyReason = na
 float athVal = na
 int athAnchor = na
-int athReason = RS_NO_EVENT
+int athReason = na
 float atlVal = na
 int atlAnchor = na
-int atlReason = RS_NO_EVENT
-float shVal = na
-int shAnchor = na
-int shKnown = na
-int shReason = RS_NO_EVENT
-float slVal = na
-int slAnchor = na
-int slKnown = na
-int slReason = RS_NO_EVENT
-array<int> shTimes = array.new_int()
-array<float> shVals = array.new_float()
-array<int> slTimes = array.new_int()
-array<float> slVals = array.new_float()
+int atlReason = na
 int srcFirst = na
 int dailyOlderAth = 0
 int dailyOlderAtl = 0
@@ -620,23 +403,6 @@ if not na(snap)
     srcFirst := snap.srcFirst
     dailyOlderAth := snap.dailyOlderAth
     dailyOlderAtl := snap.dailyOlderAtl
-if not na(swingSnap)
-    shVal := swingSnap.sh
-    shAnchor := swingSnap.shAnchor
-    shKnown := swingSnap.shKnown
-    shReason := swingSnap.shReason
-    slVal := swingSnap.sl
-    slAnchor := swingSnap.slAnchor
-    slKnown := swingSnap.slKnown
-    slReason := swingSnap.slReason
-    if not na(swingSnap.shTimes)
-        shTimes := swingSnap.shTimes
-    if not na(swingSnap.shVals)
-        shVals := swingSnap.shVals
-    if not na(swingSnap.slTimes)
-        slTimes := swingSnap.slTimes
-    if not na(swingSnap.slVals)
-        slVals := swingSnap.slVals
 
 f_canShow(int reason) =>
     reason == RS_OK or reason == RS_SEEDED or reason == RS_AVAILABLE
@@ -702,35 +468,17 @@ f_upsertLabel(label id, bool vis, float px, color col, string txt, int xTime = n
             label.set_color(result, color.new(color.white, 100))
     result
 
-f_swingLabelText(string arrow, int anchorTs) =>
-    string txt = "Swing VWAP " + arrow
-    if showAnchorDate and not na(anchorTs)
-        txt := txt + " " + str.format_time(anchorTs, "dd.MM.yyyy", ANCHOR_TZ)
-    txt
-
-f_lastPathTime(array<int> times) =>
-    int n = array.size(times)
-    n > 0 ? array.get(times, n - 1) : na
-
 var label lblDaily = na
 var label lblWeekly = na
 var label lblMonthly = na
 var label lblAth = na
 var label lblAtl = na
-var label lblSh = na
-var label lblSl = na
 
 bool visDailyLbl = showDaily and showRegularLabels and f_canShow(dailyReason) and not na(dailyVal)
 bool visWeeklyLbl = showWeekly and showRegularLabels and f_canShow(weeklyReason) and not na(weeklyVal)
 bool visMonthlyLbl = showMonthly and showRegularLabels and f_canShow(monthlyReason) and not na(monthlyVal)
 bool visAthLbl = showAth and showRegularLabels and f_canShow(athReason) and not na(athVal)
 bool visAtlLbl = showAtl and showRegularLabels and f_canShow(atlReason) and not na(atlVal)
-bool shReady = showSwing and f_canShow(shReason) and not na(shVal)
-bool slReady = showSwing and f_canShow(slReason) and not na(slVal)
-bool shDraw = shReady and not na(shKnown) and time >= shKnown
-bool slDraw = slReady and not na(slKnown) and time >= slKnown
-bool visShLbl = shDraw and showSwingLabels
-bool visSlLbl = slDraw and showSwingLabels
 
 if barstate.islast
     lblDaily := f_upsertLabel(lblDaily, visDailyLbl, dailyVal, colDaily, f_labelText("Daily", dailyAnchor, dailyReason, showAnchorDate))
@@ -738,36 +486,9 @@ if barstate.islast
     lblMonthly := f_upsertLabel(lblMonthly, visMonthlyLbl, monthlyVal, colMonthly, f_labelText("Monthly", monthlyAnchor, monthlyReason, showAnchorDate))
     lblAth := f_upsertLabel(lblAth, visAthLbl, athVal, colAth, f_labelText("ATH", athAnchor, athReason, showAnchorDate))
     lblAtl := f_upsertLabel(lblAtl, visAtlLbl, atlVal, colAtl, f_labelText("ATL", atlAnchor, atlReason, showAnchorDate))
-    lblSh := f_upsertLabel(lblSh, visShLbl, shVal, colSwing, f_swingLabelText("▲", shAnchor), f_lastPathTime(shTimes))
-    lblSl := f_upsertLabel(lblSl, visSlLbl, slVal, colSwing, f_swingLabelText("▼", slAnchor), f_lastPathTime(slTimes))
 
-var polyline polySh = na
-var polyline polySl = na
-
-f_pointsFrom(array<int> times, array<float> vals) =>
-    array<chart.point> pts = array.new<chart.point>()
-    int n = array.size(times)
-    if n >= 2
-        for i = 0 to n - 1
-            array.push(pts, chart.point.from_time(array.get(times, i), array.get(vals, i)))
-    pts
-
-if barstate.islast
-    if not na(polySh)
-        polyline.delete(polySh)
-        polySh := na
-    if not na(polySl)
-        polyline.delete(polySl)
-        polySl := na
-    array<chart.point> shPts = f_pointsFrom(shTimes, shVals)
-    array<chart.point> slPts = f_pointsFrom(slTimes, slVals)
-    if shDraw and array.size(shPts) >= 2
-        polySh := polyline.new(shPts, false, false, xloc.bar_time, colSwing, na, line.style_solid, swingWidth)
-    if slDraw and array.size(slPts) >= 2
-        polySl := polyline.new(slPts, false, false, xloc.bar_time, colSwing, na, line.style_solid, swingWidth)
-
-f_reasonText(string name, int reason, int srcFirst, bool older, string histTf = "") =>
-    string tfName = histTf == "" ? calcTf : histTf
+f_reasonText(string name, int reason, int srcFirst, bool older) =>
+    string tfName = calcTf
     string msg = ""
     if reason == RS_MISSING_PREFIX
         msg := name + " nicht berechenbar: Anker vor " + tfName + "m-Historie" + (na(srcFirst) ? "." : " (" + str.format_time(srcFirst, "dd.MM.yyyy HH:mm", ANCHOR_TZ) + ").")
@@ -775,8 +496,6 @@ f_reasonText(string name, int reason, int srcFirst, bool older, string histTf = 
         msg := name + ": kein positives Volumen seit Anker."
     else if reason == RS_INVALID
         msg := name + ": ungueltiger Preis- oder Volumenbeitrag."
-    else if reason == RS_NO_EVENT
-        msg := name + ": noch kein bestaetigter Swing."
     else if reason == RS_SEEDED
         msg := name + ": mit historischem Startbestand."
     else if reason == RS_AVAILABLE
@@ -813,15 +532,6 @@ if barstate.islast
         string m = f_reasonText("ATL", atlReason, srcFirst, dailyOlderAtl == 1)
         if m != "" and (hintMode == "Details" or atlReason != RS_OK)
             array.push(rows, m)
-    if showSwing
-        if hintMode == "Details" or shReason == RS_MISSING_PREFIX or shReason == RS_INVALID
-            string m = f_reasonText("Swing High", shReason, srcFirst, false, SWING_TF)
-            if m != ""
-                array.push(rows, m)
-        if hintMode == "Details" or slReason == RS_MISSING_PREFIX or slReason == RS_INVALID
-            string m = f_reasonText("Swing Low", slReason, srcFirst, false, SWING_TF)
-            if m != ""
-                array.push(rows, m)
     if extraHint != ""
         array.push(rows, extraHint)
     int n = array.size(rows)

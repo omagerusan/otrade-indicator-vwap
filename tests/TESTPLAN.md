@@ -1,6 +1,6 @@
 # Testplan VWAP Suite
 
-Abgeleitet aus docs/01 Abschnitt 20. Angepasst an V1.1: ATH/ATL-Extremkerze, zwei Swing-Linien.
+Abgeleitet aus docs/01 Abschnitt 20. Angepasst an V1.1: ATH/ATL-Extremkerze. Swing-VWAP ist seit 23.09.2026 nicht mehr Teil von `src/VWAP_Suite.pine`.
 Numerische Toleranz fuer identische abgeschlossene Inputdaten:
 
 ```text
@@ -52,22 +52,19 @@ Live-Pruefung: `node tests/compile_pine.mjs` (Pine-Uebersetzer) und `node tests/
 - T33 neuer Ankertag: alten Seed verwerfen
 - T34 mehr Rekordhistorie: Status aendert sich nachvollziehbar
 
-## Swing (T35-T42), zwei Linien
+## Swing (T35-T42b)
 
-- T35 unbestaetigter Pivot: keine neue Linie (High und Low getrennt)
-- T36 Abschluss rechter Pivotkerze: genau ein Ereignis je Seite
-- T37 gleiches HTF-Ereignis auf vielen Minutenbars: kein Reset
-- T38 Pivot vor Mitternacht, Bestaetigung danach: Anker = time der 15m-Pivotkerze
-- T39 neuer extremerer Pivot derselben Seite: Lock wechselt; Lookback allein nicht
-- T40 gleichzeitiger High/Low derselben Pivotzeit: beide unabhaengig
-- T41 verschiedene Chart-TFs (15m/1H/4H): gleiche 15m-Anker
-- T42 Swing aelter als 15m-Pfadfenster: MISSING_PREFIX bzw. gekuerzter Pfad
-- T42b beide Linien parallel sichtbar nach je einem High- und Low-Pivot
+Entfernt. Nicht mehr gegen `src/VWAP_Suite.pine` pruefen. Historische Spec: `docs/04_SWING_VWAP.md`.
+
+## Speicher (RE10139)
+
+- Lange 1m-Historie (BTC): Indikator laeuft ohne Runtime "Memory limits exceeded"
+- Keine Swing-Linien und keine Punktarrays aus `request.security`
 
 ## UI und Ausfuehrung (T43-T58)
 
-- T43 Input-Schalter: Linie und Label gemeinsam; Swing-Schalter beide Linien
-- T44 Label-Schalter regulaer vs Swing unabhaengig
+- T43 Input-Schalter: Linie und Label gemeinsam
+- T44 Label-Schalter der fuenf regulaeren VWAPs
 - T45 Farbe/Transparenz Linie = Label
 - T46 Style-Checkbox steuert nur Plot
 - T47 Label mit/ohne Datum, Textbeginn am Anker
@@ -79,6 +76,6 @@ Live-Pruefung: `node tests/compile_pine.mjs` (Pine-Uebersetzer) und `node tests/
 - T53 Viewport aendert Anker nicht
 - T54 Reload: Live vs Close analysieren
 - T55 alle Linien aus: keine verwaisten Labels
-- T56 viele Swingwechsel: Objektzahl begrenzt
+- T56 Objektzahl bleibt bei fuenf Labels und einer Hinweistabelle
 - T57 Tagesbasis-Option: in V1 nicht aktiv, Test N/A
 - T58 abgeschnittener Request: Status statt Nullpreis
